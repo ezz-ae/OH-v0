@@ -1,12 +1,15 @@
 'use client';
 
+import type React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Send, Mic, Phone, Video, Search, User, 
   Image as ImageIcon, Check, CheckCheck, Paperclip, Smile, X, Play, Pause,
   ShoppingCart, Sparkles, AlertTriangle, TrendingUp,
-  CheckCircle, XCircle, Gift, History, Target
+  CheckCircle, XCircle, Gift, History, Target, Megaphone, ClipboardList,
+  ShieldCheck, UserCheck, Tags, Route, FileCheck, WalletCards,
+  RefreshCw, Languages, Settings2, MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,6 +18,19 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getSession } from '@/lib/session';
 import { createClient } from '@/lib/supabase/client';
+import {
+  WHATSAPP_AUTOMATIONS,
+  WHATSAPP_BROADCASTS,
+  WHATSAPP_CATALOG_ACTIONS,
+  WHATSAPP_COMMAND_CENTER,
+  WHATSAPP_LABELS,
+  WHATSAPP_OPTIONS,
+  WHATSAPP_QUALITY_CHECKS,
+  WHATSAPP_TEAM_LOAD,
+  getMockTableData,
+} from '@/lib/operations-intelligence';
+
+type WhatsAppTool = 'inbox' | 'sales' | 'catalog' | 'labels' | 'templates' | 'broadcasts' | 'automation' | 'quality' | 'team' | 'finance';
 
 interface Customer {
   id: string;
@@ -95,6 +111,7 @@ export default function WhatsAppDeskPage() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [filter, setFilter] = useState<'all' | 'unread' | 'pending'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTool, setActiveTool] = useState<WhatsAppTool>('inbox');
   
   const [orderIntent, setOrderIntent] = useState<OrderIntent | null>(null);
   const [ghostCarts, setGhostCarts] = useState<GhostCart[]>([]);
@@ -340,6 +357,10 @@ export default function WhatsAppDeskPage() {
     open: conversations.filter(c => c.status === 'open').length,
     resolved: conversations.filter(c => c.status === 'resolved').length,
   };
+  const whatsappTemplates = getMockTableData('whatsapp_templates');
+  const financeQueue = getMockTableData('finance_verifications');
+  const globalGhostCarts = getMockTableData('ghost_carts');
+  const globalCrossSell = getMockTableData('cross_sell_opportunities');
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
@@ -356,6 +377,13 @@ export default function WhatsAppDeskPage() {
         </div>
       </header>
 
+      <WhatsAppCommandBar
+        activeTool={activeTool}
+        setActiveTool={setActiveTool}
+        conversations={conversations}
+      />
+
+      {activeTool === 'inbox' ? (
       <div className="flex-1 flex overflow-hidden">
         <div className="w-80 border-r border-border flex flex-col bg-card/30">
           <div className="p-3 border-b border-border space-y-2">
@@ -536,8 +564,443 @@ export default function WhatsAppDeskPage() {
           </div>
         )}
       </div>
+      ) : (
+        <WhatsAppOperationsPanel
+          activeTool={activeTool}
+          templates={whatsappTemplates}
+          financeQueue={financeQueue}
+          ghostCarts={globalGhostCarts}
+          crossSell={globalCrossSell}
+          selectedConversation={selectedConversation}
+          setActiveTool={setActiveTool}
+        />
+      )}
     </div>
   );
+}
+
+function WhatsAppCommandBar({
+  activeTool,
+  setActiveTool,
+  conversations,
+}: {
+  activeTool: WhatsAppTool;
+  setActiveTool: (tool: WhatsAppTool) => void;
+  conversations: Conversation[];
+}) {
+  const unread = conversations.reduce((sum, conversation) => sum + conversation.unread_count, 0);
+  const pending = conversations.filter((conversation) => conversation.status === 'pending').length;
+  const open = conversations.filter((conversation) => conversation.status === 'open').length;
+
+  return (
+    <div className="shrink-0 border-b border-border bg-background">
+      <div className="grid gap-2 border-b border-border px-4 py-2 md:grid-cols-4">
+        <div className="rounded-md border border-border bg-card/60 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">WhatsApp number</p>
+          <p className="text-sm font-medium">{WHATSAPP_COMMAND_CENTER.number}</p>
+        </div>
+        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Health</p>
+          <p className="text-sm font-medium text-emerald-300">{WHATSAPP_COMMAND_CENTER.health}% online</p>
+        </div>
+        <div className="rounded-md border border-border bg-card/60 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">SLA</p>
+          <p className="text-sm font-medium">{WHATSAPP_COMMAND_CENTER.sla} avg reply</p>
+        </div>
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Queue</p>
+          <p className="text-sm font-medium text-amber-300">{open} open · {pending} pending · {unread} unread</p>
+        </div>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto px-4 py-2">
+        {WHATSAPP_OPTIONS.map((option) => {
+          const tool = option.id as WhatsAppTool;
+          const Icon = getWhatsAppToolIcon(tool);
+          return (
+            <button
+              key={option.id}
+              onClick={() => setActiveTool(tool)}
+              className={cn(
+                'flex min-w-[170px] items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors',
+                activeTool === tool
+                  ? 'border-primary/60 bg-primary/10 text-foreground'
+                  : 'border-border bg-card/50 text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+              )}
+            >
+              <Icon className={cn('h-4 w-4 shrink-0', activeTool === tool ? 'text-primary' : 'text-muted-foreground')} />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">{option.label}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">{option.metric}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WhatsAppOperationsPanel({
+  activeTool,
+  templates,
+  financeQueue,
+  ghostCarts,
+  crossSell,
+  selectedConversation,
+  setActiveTool,
+}: {
+  activeTool: WhatsAppTool;
+  templates: any[];
+  financeQueue: any[];
+  ghostCarts: any[];
+  crossSell: any[];
+  selectedConversation: Conversation | null;
+  setActiveTool: (tool: WhatsAppTool) => void;
+}) {
+  const activeOption = WHATSAPP_OPTIONS.find((option) => option.id === activeTool);
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-background">
+      <div className="mx-auto max-w-[1600px] space-y-6 px-6 py-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              {(() => {
+                const Icon = getWhatsAppToolIcon(activeTool);
+                return <Icon className="h-5 w-5 text-primary" />;
+              })()}
+              <h2 className="text-xl font-serif font-medium">{activeOption?.label}</h2>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">{activeOption?.detail}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{WHATSAPP_COMMAND_CENTER.policy}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setActiveTool('inbox')}>
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Back to inbox
+          </Button>
+        </div>
+
+        {activeTool === 'sales' && (
+          <div className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
+            <Card className="bg-card/70">
+              <div className="border-b border-border p-4">
+                <h3 className="flex items-center gap-2 font-medium">
+                  <ShoppingCart className="h-4 w-4 text-primary" />
+                  WhatsApp Sales Control
+                </h3>
+              </div>
+              <div className="grid gap-4 p-4 md:grid-cols-2">
+                <SalesOption title="Detect order intent" value="89%" detail="Extract SKU, quantity, delivery deadline, and payment readiness." icon={<Sparkles className="h-5 w-5 text-primary" />} />
+                <SalesOption title="Create order" value="1 click" detail="Create order, items, finance verification, and confirmation message." icon={<ShoppingCart className="h-5 w-5 text-emerald-300" />} />
+                <SalesOption title="Reserve item" value="VIP" detail="Hold bridal and private drop stock for female VIP buyers." icon={<Gift className="h-5 w-5 text-amber-300" />} />
+                <SalesOption title="Finance handoff" value={String(financeQueue.length)} detail="Send payment screenshots and COD risk to finance." icon={<WalletCards className="h-5 w-5 text-blue-300" />} />
+                <SalesOption title="Delivery promise" value="KSA/UAE" detail="Confirm urgent bridal delivery before accepting payment." icon={<Route className="h-5 w-5 text-purple-300" />} />
+                <SalesOption title="Cross-sell" value={`AED ${crossSell.reduce((sum, item) => sum + (item.potential_value || 0), 0).toLocaleString()}`} detail="Bundle perfume, pendants, and private drops based on conversation context." icon={<TrendingUp className="h-5 w-5 text-emerald-300" />} />
+              </div>
+            </Card>
+
+            <div className="space-y-4">
+              <Card className="bg-card/70 p-4">
+                <h3 className="mb-3 text-sm font-medium">Selected conversation</h3>
+                {selectedConversation?.customer ? (
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Customer</span>
+                      <span>{selectedConversation.customer.first_name} {selectedConversation.customer.last_name}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">LTV</span>
+                      <span>AED {selectedConversation.customer.total_spent.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Unread</span>
+                      <span>{selectedConversation.unread_count}</span>
+                    </div>
+                    <Button className="w-full" size="sm" onClick={() => setActiveTool('inbox')}>
+                      Continue in inbox
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Select a ladies customer thread from the inbox.</p>
+                )}
+              </Card>
+
+              <Card className="bg-card/70 p-4">
+                <h3 className="mb-3 text-sm font-medium">Global recovery queue</h3>
+                <div className="space-y-2">
+                  {ghostCarts.map((cart) => (
+                    <div key={cart.id} className="rounded-md border border-border bg-background/50 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium">{cart.customer?.first_name} {cart.customer?.last_name}</span>
+                        <Badge variant="outline">AED {cart.subtotal}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">{cart.items?.[0]?.title} · {cart.abandonment_reason?.replace('_', ' ')}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeTool === 'catalog' && (
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            {WHATSAPP_CATALOG_ACTIONS.map((item) => (
+              <Card key={item.sku} className="bg-card/70 p-4">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium">{item.name}</h3>
+                    <p className="text-xs text-muted-foreground">{item.sku}</p>
+                  </div>
+                  <Badge variant={item.stock <= 3 ? 'destructive' : 'secondary'}>
+                    {item.stock} left
+                  </Badge>
+                </div>
+                <p className="rounded-md border border-border bg-background/50 p-3 text-sm">{item.action}</p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Button size="sm"><ShoppingCart className="h-4 w-4 mr-2" />Send card</Button>
+                  <Button size="sm" variant="outline"><Gift className="h-4 w-4 mr-2" />Reserve</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {activeTool === 'labels' && (
+          <div className="grid gap-4 lg:grid-cols-3">
+            {WHATSAPP_LABELS.map((label) => (
+              <Card key={label.name} className="bg-card/70 p-4">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="flex items-center gap-2 font-medium">
+                      <Tags className="h-4 w-4 text-primary" />
+                      {label.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{label.action}</p>
+                  </div>
+                  <Badge variant="outline">{label.count}</Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline">Apply</Button>
+                  <Button size="sm" variant="ghost">Route</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {activeTool === 'templates' && (
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            {templates.map((template) => (
+              <Card key={template.id} className="bg-card/70 p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium">{template.name}</h3>
+                    <p className="text-xs text-muted-foreground">{template.use_case}</p>
+                  </div>
+                  <Badge variant="outline" className={template.status === 'approved' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-300'}>
+                    {template.status}
+                  </Badge>
+                </div>
+                <div className="rounded-md border border-border bg-background/50 p-3 text-sm">{template.body}</div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                  <span>{template.language}</span>
+                  <span className="text-right">Quality {template.quality}%</span>
+                  <span>{template.category}</span>
+                  <span className="text-right">{template.owner}</span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {activeTool === 'broadcasts' && (
+          <div className="grid gap-4 lg:grid-cols-3">
+            {WHATSAPP_BROADCASTS.map((broadcast) => (
+              <Card key={broadcast.id} className="bg-card/70 p-4">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium">{broadcast.name}</h3>
+                    <p className="text-xs text-muted-foreground">{broadcast.audience}</p>
+                  </div>
+                  <Badge variant="outline">{broadcast.status}</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-md border border-border bg-background/50 p-3">
+                    <p className="text-xs text-muted-foreground">Expected revenue</p>
+                    <p className="mt-1 font-semibold">{broadcast.expectedRevenue}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background/50 p-3">
+                    <p className="text-xs text-muted-foreground">Owner</p>
+                    <p className="mt-1 font-semibold">{broadcast.owner}</p>
+                  </div>
+                </div>
+                <p className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">{broadcast.guardrail}</p>
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm" className="flex-1"><Megaphone className="h-4 w-4 mr-2" />Prepare</Button>
+                  <Button size="sm" variant="outline">Preview</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {activeTool === 'automation' && (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {WHATSAPP_AUTOMATIONS.map((automation) => (
+              <Card key={automation.name} className="bg-card/70 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium">{automation.name}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">When: {automation.trigger}</p>
+                    <p className="mt-1 text-sm">Then: {automation.action}</p>
+                  </div>
+                  <Badge variant={automation.enabled ? 'default' : 'secondary'}>
+                    {automation.enabled ? 'on' : 'off'}
+                  </Badge>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {activeTool === 'quality' && (
+          <div className="grid gap-6 xl:grid-cols-[1fr_.8fr]">
+            <Card className="bg-card/70">
+              <div className="border-b border-border p-4">
+                <h3 className="flex items-center gap-2 font-medium"><ShieldCheck className="h-4 w-4 text-primary" />Quality review</h3>
+              </div>
+              <div className="space-y-3 p-4">
+                {WHATSAPP_QUALITY_CHECKS.map((check) => (
+                  <div key={check.label} className="rounded-md border border-border bg-background/50 p-4">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="font-medium">{check.label}</span>
+                      <Badge variant="outline">{check.score}%</Badge>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${check.score}%` }} />
+                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">{check.issue}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="bg-card/70 p-4">
+              <h3 className="mb-3 flex items-center gap-2 font-medium"><Languages className="h-4 w-4 text-blue-300" />Reply rules</h3>
+              <div className="space-y-3">
+                {[
+                  'Use Arabic first when the customer writes in Arabic.',
+                  'Mention delivery certainty before payment pressure.',
+                  'Protect VIP female customer privacy in every internal note.',
+                  'Do not lead bridal conversations with discounts.',
+                  'Escalate payment screenshots to finance, not chat guesses.',
+                ].map((rule) => (
+                  <div key={rule} className="flex gap-2 rounded-md border border-border bg-background/50 p-3 text-sm">
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                    <span>{rule}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {activeTool === 'team' && (
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            {WHATSAPP_TEAM_LOAD.map((member) => (
+              <Card key={member.name} className="bg-card/70 p-4">
+                <div className="mb-4 flex items-start justify-between">
+                  <div>
+                    <h3 className="font-medium">{member.name}</h3>
+                    <p className="text-xs text-muted-foreground">{member.role}</p>
+                  </div>
+                  <Badge variant="outline">{member.score}%</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="rounded-md border border-border bg-background/50 p-3">
+                    <p className="text-xs text-muted-foreground">Open</p>
+                    <p className="text-xl font-semibold">{member.open}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background/50 p-3">
+                    <p className="text-xs text-muted-foreground">VIP</p>
+                    <p className="text-xl font-semibold">{member.vip}</p>
+                  </div>
+                </div>
+                <p className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">{member.next}</p>
+                <Button className="mt-4 w-full" size="sm" variant="outline"><UserCheck className="h-4 w-4 mr-2" />Reassign</Button>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {activeTool === 'finance' && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {financeQueue.map((item) => (
+              <Card key={item.id} className="bg-card/70 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium">{item.order?.order_number}</h3>
+                    <p className="text-sm text-muted-foreground">{item.order?.customer?.first_name} {item.order?.customer?.last_name}</p>
+                  </div>
+                  <Badge variant={item.priority === 'high' ? 'destructive' : 'secondary'}>{item.priority}</Badge>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                  <div className="rounded-md border border-border bg-background/50 p-3">
+                    <p className="text-xs text-muted-foreground">Amount</p>
+                    <p className="font-semibold">AED {item.amount}</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background/50 p-3">
+                    <p className="text-xs text-muted-foreground">Risk</p>
+                    <p className="font-semibold">{Math.round(item.risk_score * 100)}%</p>
+                  </div>
+                  <div className="rounded-md border border-border bg-background/50 p-3">
+                    <p className="text-xs text-muted-foreground">Method</p>
+                    <p className="font-semibold">{item.payment_method?.replace('_', ' ')}</p>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">{item.notes}</p>
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm"><FileCheck className="h-4 w-4 mr-2" />Approve</Button>
+                  <Button size="sm" variant="outline"><RefreshCw className="h-4 w-4 mr-2" />Ask again</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SalesOption({ title, value, detail, icon }: { title: string; value: string; detail: string; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-md border border-border bg-background/50 p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        {icon}
+        <Badge variant="outline">{value}</Badge>
+      </div>
+      <p className="font-medium">{title}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
+    </div>
+  );
+}
+
+function getWhatsAppToolIcon(tool: WhatsAppTool) {
+  const icons = {
+    inbox: MessageSquare,
+    sales: ShoppingCart,
+    catalog: Gift,
+    labels: Tags,
+    templates: ClipboardList,
+    broadcasts: Megaphone,
+    automation: Settings2,
+    quality: ShieldCheck,
+    team: UserCheck,
+    finance: WalletCards,
+  };
+  return icons[tool] || MessageSquare;
 }
 
 function MessageBubble({ message }: { message: Message }) {

@@ -844,6 +844,52 @@ export const MOCK_TABLES: Record<string, any[]> = {
     { id: 'sc_2', query: 'women eid gift jewellery', page: '/collections/eid-gifts', device: 'mobile', impressions: 6100, clicks: 410, ctr: 0.067, position: 5.2 },
     { id: 'sc_3', query: 'luxury ladies perfume uae', page: '/products/oud-royal', device: 'desktop', impressions: 2800, clicks: 145, ctr: 0.052, position: 6.9 },
   ],
+  whatsapp_templates: [
+    {
+      id: 'tpl_payment_confirm',
+      name: 'Payment confirmation',
+      category: 'utility',
+      language: 'Arabic + English',
+      status: 'approved',
+      quality: 96,
+      body: 'Thank you, {first_name}. We received your payment screenshot and finance is verifying it now.',
+      use_case: 'Bank transfer and payment proof follow-up',
+      owner: 'Arslan',
+    },
+    {
+      id: 'tpl_bridal_deadline',
+      name: 'Bridal delivery promise',
+      category: 'utility',
+      language: 'Arabic',
+      status: 'approved',
+      quality: 92,
+      body: 'Your bridal order is reserved. We are confirming delivery timing before Thursday evening.',
+      use_case: 'Urgent female bridal customers',
+      owner: 'Abdelrahman',
+    },
+    {
+      id: 'tpl_eid_vip',
+      name: 'VIP Eid private drop',
+      category: 'marketing',
+      language: 'Arabic + English',
+      status: 'pending',
+      quality: 84,
+      body: 'A private ladies Eid drop is available for VIP clients before public launch.',
+      use_case: 'VIP repeat women buyers',
+      owner: 'Ahmed',
+    },
+    {
+      id: 'tpl_cart_recovery',
+      name: 'Cart recovery concierge',
+      category: 'marketing',
+      language: 'English',
+      status: 'approved',
+      quality: 89,
+      body: 'I can reserve these pieces and confirm delivery timing before you complete checkout.',
+      use_case: 'Abandoned ladies jewellery carts',
+      owner: 'Mohamed',
+    },
+  ],
 };
 
 export const DAILY_REPORTS = [
@@ -858,6 +904,102 @@ export const BRAND_SIGNALS = [
   { label: 'Bridal urgency', score: 86, detail: 'Deadline and delivery certainty outperform discount offers.' },
   { label: 'Arabic reassurance', score: 79, detail: 'Arabic WhatsApp replies improve payment completion.' },
   { label: 'Discount risk', score: 42, detail: 'Price language lowers premium perception for bridal sets.' },
+];
+
+export const WHATSAPP_COMMAND_CENTER = {
+  number: '+971 56 547 8227',
+  health: 94,
+  sla: '4m 12s',
+  openThreads: 18,
+  owner: 'Abdelrahman',
+  policy: 'Ladies-only concierge. Every reply must protect privacy, delivery certainty, and brand value.',
+};
+
+export const WHATSAPP_OPTIONS = [
+  { id: 'inbox', label: 'Inbox', metric: '18 open', detail: 'All WhatsApp conversations and unread handoffs' },
+  { id: 'sales', label: 'Sales', metric: 'AED 64.8k', detail: 'Order intent, carts, bundles, and payment readiness' },
+  { id: 'catalog', label: 'Catalog', metric: '4 SKUs', detail: 'Send products, reserve stock, and attach ladies-only product cards' },
+  { id: 'labels', label: 'Labels', metric: '9 labels', detail: 'VIP, bridal, payment, KSA, recovery, and quality labels' },
+  { id: 'templates', label: 'Templates', metric: '4 live', detail: 'Approved WhatsApp utility and marketing templates' },
+  { id: 'broadcasts', label: 'Broadcasts', metric: '3 segments', detail: 'VIP, bridal, Eid, and recovery campaign sends' },
+  { id: 'automation', label: 'Automation', metric: '7 rules', detail: 'Routing, SLA, language, cart, and finance triggers' },
+  { id: 'quality', label: 'Quality', metric: '91 score', detail: 'Arabic tone, brand compliance, and privacy checks' },
+  { id: 'team', label: 'Team', metric: '4 agents', detail: 'Male operator workload, skills, and reassignment' },
+  { id: 'finance', label: 'Finance', metric: '2 pending', detail: 'Payment proof, COD risk, BNPL, and fraud review' },
+];
+
+export const WHATSAPP_BROADCASTS = [
+  {
+    id: 'bc_vip_eid',
+    name: 'VIP ladies Eid private drop',
+    audience: '84 VIP women',
+    status: 'ready',
+    owner: 'Ahmed',
+    expectedRevenue: 'AED 48k',
+    guardrail: 'Send only to opted-in VIP buyers with prior purchase history.',
+  },
+  {
+    id: 'bc_bridal_delivery',
+    name: 'Bridal delivery certainty',
+    audience: '146 bridal collectors',
+    status: 'review',
+    owner: 'Abdelrahman',
+    expectedRevenue: 'AED 62k',
+    guardrail: 'No discount language. Lead with reservation and delivery promise.',
+  },
+  {
+    id: 'bc_cart_recovery',
+    name: 'Ladies cart recovery',
+    audience: '39 abandoned carts',
+    status: 'scheduled',
+    owner: 'Mohamed',
+    expectedRevenue: 'AED 18k',
+    guardrail: 'Recover with concierge help, not mass-promo language.',
+  },
+];
+
+export const WHATSAPP_AUTOMATIONS = [
+  { name: 'VIP women priority route', trigger: 'LTV above AED 8,000', action: 'Assign to Abdelrahman', enabled: true },
+  { name: 'Payment screenshot triage', trigger: 'Image after order intent', action: 'Create finance verification', enabled: true },
+  { name: 'Bridal deadline escalation', trigger: 'Thursday, wedding, urgent, Riyadh', action: 'Notify owner and senior agent', enabled: true },
+  { name: 'Arabic reassurance', trigger: 'Arabic buyer + payment/delivery worry', action: 'Suggest approved Arabic reply', enabled: true },
+  { name: 'Cart recovery', trigger: 'Abandoned cart over AED 700', action: 'Offer reserve and delivery check', enabled: true },
+  { name: 'Discount guard', trigger: 'Agent drafts discount first', action: 'Warn and suggest concierge wording', enabled: true },
+  { name: 'Quiet hours', trigger: 'After 22:30 UAE', action: 'Use polite delayed response template', enabled: false },
+];
+
+export const WHATSAPP_QUALITY_CHECKS = [
+  { label: 'Ladies-only relevance', score: 98, issue: 'All active templates target women buyers.' },
+  { label: 'Arabic tone', score: 88, issue: 'Two replies need warmer delivery reassurance.' },
+  { label: 'Luxury positioning', score: 82, issue: 'Avoid leading with discounts in cart recovery.' },
+  { label: 'Privacy', score: 96, issue: 'No sensitive payment details exposed in draft messages.' },
+  { label: 'SLA', score: 79, issue: 'Mariam K. bridal thread breached 10 minute priority SLA.' },
+];
+
+export const WHATSAPP_TEAM_LOAD = [
+  { name: 'Abdelrahman', role: 'WhatsApp manager', open: 6, vip: 3, score: 92, next: 'Take Mariam K. from Abdallah' },
+  { name: 'Arslan', role: 'Payment verification', open: 5, vip: 1, score: 86, next: 'Clear Noura bank transfer' },
+  { name: 'Abdallah', role: 'KSA market', open: 2, vip: 1, score: 81, next: 'Offline, reassign urgent bridal' },
+  { name: 'Mohamed', role: 'Junior concierge', open: 5, vip: 0, score: 74, next: 'Use approved recovery templates only' },
+];
+
+export const WHATSAPP_LABELS = [
+  { name: 'VIP lady', count: 84, action: 'Senior manager only' },
+  { name: 'Bridal deadline', count: 17, action: 'Escalate delivery promise' },
+  { name: 'Payment proof', count: 9, action: 'Finance verification' },
+  { name: 'KSA delivery', count: 11, action: 'Route to KSA operator' },
+  { name: 'Cart recovery', count: 39, action: 'Send concierge recovery' },
+  { name: 'Arabic only', count: 52, action: 'Arabic template first' },
+  { name: 'BNPL request', count: 8, action: 'Manager approval' },
+  { name: 'Refund risk', count: 4, action: 'Finance + owner review' },
+  { name: 'Private drop', count: 22, action: 'Reserve limited stock' },
+];
+
+export const WHATSAPP_CATALOG_ACTIONS = [
+  { sku: 'OMN-RB-001', name: 'Ruby Bangle for Ladies', stock: 18, action: 'Send product card + price parity note' },
+  { sku: 'OMN-MP-002', name: 'Moonstone Pendant for Ladies', stock: 3, action: 'Reserve before sending because stock is low' },
+  { sku: 'OMN-LC-003', name: 'LE Celestial Bridal Set', stock: 8, action: 'Confirm delivery deadline before payment' },
+  { sku: 'OMN-PF-001', name: 'Oud Royal Perfume for Ladies', stock: 42, action: 'Bundle with bridal and Eid gift chats' },
 ];
 
 export function getMockTableData(table: string) {
