@@ -122,6 +122,9 @@ export default function CustomersPage() {
       .eq('org_id', '00000000-0000-0000-0000-000000000001')
       .order('total_spent', { ascending: false });
     setCustomers(data || []);
+    if (data && data.length > 0) {
+      setSelectedCustomer((current) => current || data[0]);
+    }
     setLoading(false);
   }
 

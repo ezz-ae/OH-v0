@@ -1,24 +1,89 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { getMockTableData } from '@/lib/operations-intelligence'
 
 let client: ReturnType<typeof createBrowserClient> | null = null;
 
-function createMockQuery(data: unknown = []) {
-  const result = {
-    data,
-    error: null,
-    count: null,
-    status: 200,
-    statusText: 'OK',
-  };
+type MockRow = Record<string, any>;
+type MockFilter = { field: string; value: unknown };
+
+function createMockQuery(table: string, seed: MockRow[] = getMockTableData(table)) {
+  const filters: MockFilter[] = [];
+  let orderBy: { field: string; ascending: boolean } | null = null;
+  let rowLimit: number | null = null;
+  let singleResult = false;
+  let mutationData: unknown;
+
+  function currentData() {
+    let rows = [...seed];
+
+    for (const filter of filters) {
+      rows = rows.filter((row) => row?.[filter.field] === filter.value);
+    }
+
+    if (orderBy) {
+      rows.sort((a, b) => {
+        const aValue = a?.[orderBy!.field];
+        const bValue = b?.[orderBy!.field];
+        if (aValue === bValue) return 0;
+        const result = aValue > bValue ? 1 : -1;
+        return orderBy!.ascending ? result : -result;
+      });
+    }
+
+    if (rowLimit !== null) {
+      rows = rows.slice(0, rowLimit);
+    }
+
+    if (mutationData !== undefined) {
+      const inserted = Array.isArray(mutationData) ? mutationData : [mutationData];
+      rows = inserted.map((row, index) => ({
+        id: (row as MockRow).id || `mock_${table}_${Date.now()}_${index}`,
+        ...(row as MockRow),
+      }));
+    }
+
+    return singleResult ? rows[0] || null : rows;
+  }
+
+  function result() {
+    const data = currentData();
+    return {
+      data,
+      error: null,
+      count: Array.isArray(data) ? data.length : data ? 1 : 0,
+      status: 200,
+      statusText: 'OK',
+    };
+  }
 
   const query = {
-    ...result,
+    get data() {
+      return result().data;
+    },
+    error: null,
+    get count() {
+      return result().count;
+    },
+    status: 200,
+    statusText: 'OK',
     select: () => query,
-    insert: () => createMockQuery(null),
-    update: () => query,
+    insert: (value: unknown) => {
+      mutationData = value;
+      return query;
+    },
+    update: (value: unknown) => {
+      mutationData = value;
+      return query;
+    },
     delete: () => query,
-    upsert: () => query,
-    eq: () => query,
+    upsert: (value: unknown) => {
+      mutationData = value;
+      return query;
+    },
+    eq: (field: string, value: unknown) => {
+      filters.push({ field, value });
+      return query;
+    },
     neq: () => query,
     gt: () => query,
     gte: () => query,
@@ -27,14 +92,26 @@ function createMockQuery(data: unknown = []) {
     is: () => query,
     in: () => query,
     contains: () => query,
-    order: () => query,
-    limit: () => query,
-    single: () => createMockQuery(null),
-    maybeSingle: () => createMockQuery(null),
+    order: (field: string, options?: { ascending?: boolean }) => {
+      orderBy = { field, ascending: options?.ascending ?? true };
+      return query;
+    },
+    limit: (count: number) => {
+      rowLimit = count;
+      return query;
+    },
+    single: () => {
+      singleResult = true;
+      return query;
+    },
+    maybeSingle: () => {
+      singleResult = true;
+      return query;
+    },
     then: (
-      resolve: (value: typeof result) => unknown,
+      resolve: (value: ReturnType<typeof result>) => unknown,
       reject?: (reason: unknown) => unknown,
-    ) => Promise.resolve(result).then(resolve, reject),
+    ) => Promise.resolve(result()).then(resolve, reject),
   };
 
   return query;
@@ -42,7 +119,7 @@ function createMockQuery(data: unknown = []) {
 
 function createMockClient(): ReturnType<typeof createBrowserClient> {
   return {
-    from: () => createMockQuery(),
+    from: (table: string) => createMockQuery(table),
     auth: {
       getUser: async () => ({ data: { user: null }, error: null }),
     },
