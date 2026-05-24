@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Package,
   Search,
-  Filter,
   RefreshCw,
   AlertTriangle,
   CheckCircle,
@@ -20,12 +19,35 @@ import {
   ShoppingBag,
   Store,
   BarChart3,
-  ChevronDown,
   ExternalLink,
   Clock,
   AlertCircle,
+  Activity,
+  Bot,
+  Brain,
+  ClipboardList,
+  Gem,
+  Globe2,
+  Route,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Tags,
+  Truck,
+  Users2,
+  Zap,
+  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  INVENTORY_AI_ACTIONS,
+  INVENTORY_CHANNELS,
+  INVENTORY_OPTIONS,
+  INVENTORY_REORDER_QUEUE,
+  INVENTORY_RESERVATIONS,
+  INVENTORY_SEO_TASKS,
+  INVENTORY_SUPPLIERS,
+} from '@/lib/operations-intelligence';
 
 type Product = {
   id: string;
@@ -68,14 +90,44 @@ type ParityDrift = {
   product_b?: Product;
 };
 
-type TabType = 'catalogue' | 'parity' | 'stats';
+type TabType =
+  | 'command'
+  | 'catalogue'
+  | 'parity'
+  | 'reservations'
+  | 'reorder'
+  | 'pricing'
+  | 'channels'
+  | 'seo'
+  | 'suppliers'
+  | 'stats';
+
+const inventoryOptions = INVENTORY_OPTIONS as Array<{
+  id: TabType;
+  label: string;
+  metric: string;
+  detail: string;
+}>;
+
+const tabIcons: Record<TabType, LucideIcon> = {
+  command: Bot,
+  catalogue: Package,
+  parity: ShieldCheck,
+  reservations: ClipboardList,
+  reorder: Truck,
+  pricing: Tags,
+  channels: Globe2,
+  seo: Sparkles,
+  suppliers: Users2,
+  stats: BarChart3,
+};
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [stores, setStores] = useState<StoreConnection[]>([]);
   const [drifts, setDrifts] = useState<ParityDrift[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>('catalogue');
+  const [activeTab, setActiveTab] = useState<TabType>('command');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -212,6 +264,7 @@ export default function InventoryPage() {
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'critical':
+      case 'urgent':
         return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Critical</Badge>;
       case 'high':
         return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">High</Badge>;
@@ -219,6 +272,33 @@ export default function InventoryPage() {
         return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Medium</Badge>;
       default:
         return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Low</Badge>;
+    }
+  };
+
+  const getActionBadge = (urgency: string) => {
+    switch (urgency) {
+      case 'critical':
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Critical</Badge>;
+      case 'high':
+        return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">High</Badge>;
+      case 'medium':
+        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Medium</Badge>;
+      case 'approve':
+        return <Badge className="bg-primary/20 text-primary border-primary/30">Approve</Badge>;
+      case 'held':
+        return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Held</Badge>;
+      case 'review':
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Review</Badge>;
+      case 'drift':
+      case 'warning':
+        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">{urgency}</Badge>;
+      case 'online':
+      case 'monitor':
+      case 'bundle':
+      case 'reserve':
+        return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{urgency}</Badge>;
+      default:
+        return <Badge variant="outline">{urgency}</Badge>;
     }
   };
 
@@ -304,29 +384,180 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex items-center gap-1 mt-4">
-            {(['catalogue', 'parity', 'stats'] as TabType[]).map(tab => (
+          {/* Command Options */}
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {inventoryOptions.map(option => {
+              const OptionIcon = tabIcons[option.id];
+              const metric = option.id === 'parity' ? `${stats.drifts} drifts` : option.metric;
+              return (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === tab
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                key={option.id}
+                type="button"
+                aria-pressed={activeTab === option.id}
+                onClick={() => setActiveTab(option.id)}
+                className={`min-w-[170px] rounded-lg border px-3 py-2 text-left transition-colors ${
+                  activeTab === option.id
+                    ? 'border-primary/40 bg-primary/15 text-primary'
+                    : 'border-border bg-background/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                 }`}
               >
-                {tab === 'catalogue' && 'Catalogue'}
-                {tab === 'parity' && `Parity (${stats.drifts})`}
-                {tab === 'stats' && 'Stats'}
+                <span className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <OptionIcon className="h-4 w-4" />
+                    {option.label}
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">
+                    {metric}
+                  </Badge>
+                </span>
+                <span className="mt-1 block truncate text-xs text-muted-foreground">{option.detail}</span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       </header>
 
       {/* Content */}
       <main className="max-w-[1600px] mx-auto px-6 py-6">
+        {activeTab === 'command' && (
+          <div className="space-y-6">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <Card className="border-border bg-card/70">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">AI priorities</p>
+                      <p className="mt-2 text-3xl font-semibold">{INVENTORY_AI_ACTIONS.length}</p>
+                    </div>
+                    <Brain className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">Inventory decisions queued for owner and operators</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card/70">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Low stock</p>
+                      <p className="mt-2 text-3xl font-semibold text-amber-400">{stats.lowStock}</p>
+                    </div>
+                    <AlertTriangle className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">Moonstone demand and bridal holds need stock protection</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card/70">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Reservations</p>
+                      <p className="mt-2 text-3xl font-semibold text-primary">{INVENTORY_RESERVATIONS.length}</p>
+                    </div>
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">VIP women, bridal deadlines, and private drop stock holds</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card/70">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Channel risk</p>
+                      <p className="mt-2 text-3xl font-semibold text-red-400">{stats.drifts}</p>
+                    </div>
+                    <ShieldCheck className="h-5 w-5 text-red-400" />
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">Price, stock, copy, and catalog sync issues across channels</p>
+                </CardContent>
+              </Card>
+            </section>
+
+            <section className="grid gap-6 xl:grid-cols-[1.4fr_.9fr]">
+              <Card className="border-border bg-card/70">
+                <CardHeader className="border-b border-border">
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Bot className="h-4 w-4 text-primary" />
+                      Inventory AI Action Queue
+                    </CardTitle>
+                    <Badge variant="secondary">Ladies commerce guardrails active</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="grid gap-4 p-4 lg:grid-cols-2">
+                  {INVENTORY_AI_ACTIONS.map(action => (
+                    <div key={action.title} className="rounded-md border border-border bg-background/50 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h2 className="text-sm font-medium leading-snug">{action.title}</h2>
+                          <p className="mt-1 text-xs text-muted-foreground">Owner: {action.owner}</p>
+                        </div>
+                        {getActionBadge(action.urgency)}
+                      </div>
+                      <p className="mt-4 text-sm text-primary">{action.impact}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">{action.reason}</p>
+                      <div className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+                        {action.action}
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline" className="gap-2">
+                          <Route className="h-4 w-4" />
+                          Route
+                        </Button>
+                        <Button size="sm" className="gap-2">
+                          <Zap className="h-4 w-4" />
+                          Prepare
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <aside className="space-y-6">
+                <Card className="border-primary/25 bg-primary/5">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3">
+                      <Gem className="mt-1 h-5 w-5 text-primary" />
+                      <div>
+                        <h2 className="font-medium">Inventory Rules</h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Products, holds, bundles, and SEO copy are for women customers only. Do not create male customer examples.
+                        </p>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Price changes, BNPL exceptions, refunds, and public stock promises stay owner-approved.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border bg-card/70">
+                  <CardHeader className="border-b border-border">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Activity className="h-4 w-4 text-emerald-300" />
+                      Fast Signals
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 p-4">
+                    {[
+                      ['Reorder exposure', 'AED 18,000 Moonstone weekend demand'],
+                      ['Margin risk', 'AED 14,600 from Ruby Bangle price drift'],
+                      ['VIP holds', `${INVENTORY_RESERVATIONS.length} customer reservations`],
+                      ['SEO gap', `${INVENTORY_SEO_TASKS.length} product copy tasks`],
+                    ].map(([label, value]) => (
+                      <div key={label} className="flex items-center justify-between rounded-md border border-border bg-background/50 p-3 text-sm">
+                        <span className="text-muted-foreground">{label}</span>
+                        <span className="font-medium">{value}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </aside>
+            </section>
+          </div>
+        )}
+
         {activeTab === 'catalogue' && (
           <div className="space-y-4">
             {/* Filters */}
@@ -547,6 +778,297 @@ export default function InventoryPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'reservations' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">Reservations</h2>
+                <p className="text-sm text-muted-foreground">Stock holds for VIP women, bridal deadlines, and private drops</p>
+              </div>
+              <Button className="gap-2">
+                <ClipboardList className="h-4 w-4" />
+                New Hold
+              </Button>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-3">
+              {INVENTORY_RESERVATIONS.map(reservation => (
+                <Card key={`${reservation.customer}-${reservation.product}`} className="border-border bg-card/70">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">{reservation.customer}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{reservation.product}</p>
+                      </div>
+                      {getActionBadge(reservation.status)}
+                    </div>
+                    <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-md border border-border bg-background/50 p-3">
+                        <p className="text-xs text-muted-foreground">Quantity</p>
+                        <p className="mt-1 text-xl font-semibold">{reservation.qty}</p>
+                      </div>
+                      <div className="rounded-md border border-border bg-background/50 p-3">
+                        <p className="text-xs text-muted-foreground">Expires</p>
+                        <p className="mt-1 font-medium">{reservation.expires}</p>
+                      </div>
+                    </div>
+                    <p className="mt-4 text-sm text-muted-foreground">{reservation.reason}</p>
+                    <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Owner</span>
+                      <span className="font-medium text-foreground">{reservation.owner}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'reorder' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">Reorder Queue</h2>
+                <p className="text-sm text-muted-foreground">Supplier decisions, demand forecasts, and stockout prevention</p>
+              </div>
+              <Button variant="outline" className="gap-2">
+                <Truck className="h-4 w-4" />
+                Supplier Plan
+              </Button>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              {INVENTORY_REORDER_QUEUE.map(item => {
+                const stockRatio = Math.min(100, Math.round((item.current / item.threshold) * 100));
+                return (
+                  <Card key={item.product} className="border-border bg-card/70">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-medium">{item.product}</h3>
+                          <p className="mt-1 text-xs text-muted-foreground">{item.supplier} - lead time {item.leadTime}</p>
+                        </div>
+                        {getActionBadge(item.status)}
+                      </div>
+                      <div className="mt-5 grid grid-cols-3 gap-3 text-center text-sm">
+                        <div className="rounded-md border border-border bg-background/50 p-3">
+                          <p className="text-2xl font-semibold">{item.current}</p>
+                          <p className="text-xs text-muted-foreground">Current</p>
+                        </div>
+                        <div className="rounded-md border border-border bg-background/50 p-3">
+                          <p className="text-2xl font-semibold">{item.threshold}</p>
+                          <p className="text-xs text-muted-foreground">Threshold</p>
+                        </div>
+                        <div className="rounded-md border border-primary/25 bg-primary/5 p-3">
+                          <p className="text-2xl font-semibold text-primary">{item.reorder}</p>
+                          <p className="text-xs text-muted-foreground">Reorder</p>
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="mb-2 flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Threshold coverage</span>
+                          <span>{stockRatio}%</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={`h-full rounded-full ${stockRatio < 60 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                            style={{ width: `${stockRatio}%` }}
+                          />
+                        </div>
+                      </div>
+                      <p className="mt-4 text-sm text-muted-foreground">{item.forecast}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'pricing' && (
+          <div className="space-y-6">
+            <section className="grid gap-4 lg:grid-cols-3">
+              <Card className="border-border bg-card/70">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-400" />
+                    <div>
+                      <p className="text-2xl font-semibold">13.6%</p>
+                      <p className="text-xs text-muted-foreground">Ruby Bangle channel drift</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card/70">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3">
+                    <Gem className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-2xl font-semibold">Luxury first</p>
+                      <p className="text-xs text-muted-foreground">Concierge value before discounts</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card/70">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                    <div>
+                      <p className="text-2xl font-semibold">Owner gate</p>
+                      <p className="text-xs text-muted-foreground">Price changes, BNPL, and exceptions require approval</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            <Card className="border-border bg-card/70">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Tags className="h-4 w-4 text-primary" />
+                  Pricing Guardrails
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 p-4">
+                {INVENTORY_AI_ACTIONS.filter(action => action.title.includes('price') || action.title.includes('Ruby')).map(action => (
+                  <div key={action.title} className="rounded-md border border-border bg-background/50 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-medium">{action.title}</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">Owner: {action.owner}</p>
+                      </div>
+                      {getActionBadge(action.urgency)}
+                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">{action.reason}</p>
+                    <p className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">{action.action}</p>
+                  </div>
+                ))}
+                <div className="rounded-md border border-border bg-background/50 p-4">
+                  <h3 className="text-sm font-medium">Live parity evidence</h3>
+                  <div className="mt-3 space-y-2">
+                    {drifts.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No unresolved pricing drift from connected stores.</p>
+                    ) : (
+                      drifts.map(drift => (
+                        <div key={drift.id} className="flex items-center justify-between gap-3 text-sm">
+                          <span className="text-muted-foreground">{drift.product_a?.title || drift.field_name}</span>
+                          <span className="font-medium">{drift.value_a} / {drift.value_b}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'channels' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">Channel Sync</h2>
+                <p className="text-sm text-muted-foreground">Shopify, WooCommerce, WhatsApp Catalog, and Google Merchant coverage</p>
+              </div>
+              <Button variant="outline" className="gap-2" onClick={loadData}>
+                <RefreshCw className="h-4 w-4" />
+                Recheck
+              </Button>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {INVENTORY_CHANNELS.map(channel => (
+                <Card key={channel.name} className="border-border bg-card/70">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-medium">{channel.name}</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">{channel.products} products - synced {channel.sync}</p>
+                      </div>
+                      {getActionBadge(channel.status)}
+                    </div>
+                    <p className="mt-4 text-sm text-muted-foreground">{channel.issue}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" className="gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        Sync
+                      </Button>
+                      <Button size="sm" variant="ghost" className="gap-2">
+                        <ExternalLink className="h-4 w-4" />
+                        Open
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'seo' && (
+          <div className="space-y-6">
+            <Card className="border-border bg-card/70">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Product SEO Copy Queue
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 p-4 lg:grid-cols-2">
+                {INVENTORY_SEO_TASKS.map(task => (
+                  <div key={`${task.product}-${task.keyword}`} className="rounded-md border border-border bg-background/50 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-medium">{task.product}</h3>
+                        <p className="mt-1 text-xs text-primary">{task.keyword}</p>
+                      </div>
+                      <Badge variant="outline">{task.impact}</Badge>
+                    </div>
+                    <p className="mt-4 text-sm text-muted-foreground">{task.issue}</p>
+                    <Button size="sm" className="mt-4 gap-2">
+                      <Send className="h-4 w-4" />
+                      Draft Copy
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'suppliers' && (
+          <div className="space-y-6">
+            <div className="grid gap-4 xl:grid-cols-2">
+              {INVENTORY_SUPPLIERS.map(supplier => (
+                <Card key={supplier.name} className="border-border bg-card/70">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-medium">{supplier.name}</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">{supplier.category} - lead time {supplier.leadTime}</p>
+                      </div>
+                      <Badge variant="outline">{supplier.health}% health</Badge>
+                    </div>
+                    <div className="mt-5">
+                      <div className="mb-2 flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Reliability</span>
+                        <span>{supplier.health}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={`h-full rounded-full ${supplier.health < 80 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                          style={{ width: `${supplier.health}%` }}
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-4 rounded-md border border-border bg-background/50 p-3 text-sm text-muted-foreground">
+                      {supplier.risk}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 

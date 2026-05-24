@@ -1002,6 +1002,123 @@ export const WHATSAPP_CATALOG_ACTIONS = [
   { sku: 'OMN-PF-001', name: 'Oud Royal Perfume for Ladies', stock: 42, action: 'Bundle with bridal and Eid gift chats' },
 ];
 
+export const INVENTORY_OPTIONS = [
+  { id: 'command', label: 'Command', metric: '9 decisions', detail: 'AI inventory priorities, risk, reservations, and owner approvals' },
+  { id: 'catalogue', label: 'Catalogue', metric: '4 SKUs', detail: 'All ladies products, stock, category, and channel records' },
+  { id: 'parity', label: 'Parity', metric: '1 drift', detail: 'Price, stock, availability, and title mismatch resolution' },
+  { id: 'reservations', label: 'Reservations', metric: '3 holds', detail: 'VIP women, bridal deadlines, and private drop stock holds' },
+  { id: 'reorder', label: 'Reorder', metric: 'AED 18k', detail: 'Supplier reorder, forecast, lead time, and stockout prevention' },
+  { id: 'pricing', label: 'Pricing', metric: '13.6% drift', detail: 'Margin, channel exceptions, BNPL, and luxury price guardrails' },
+  { id: 'channels', label: 'Channels', metric: '2 stores', detail: 'Shopify, WooCommerce, WhatsApp catalog, Google Merchant sync' },
+  { id: 'seo', label: 'SEO Copy', metric: '12 missing', detail: 'Product titles, meta copy, ladies keywords, and Arabic FAQ needs' },
+  { id: 'suppliers', label: 'Suppliers', metric: '4 vendors', detail: 'Atelier, fragrance, courier, and packaging dependency health' },
+  { id: 'stats', label: 'Stats', metric: 'live', detail: 'Inventory summary, categories, low stock, and sync health' },
+];
+
+export const INVENTORY_AI_ACTIONS = [
+  {
+    title: 'Reserve LE Celestial Bridal Set for Mariam K.',
+    owner: 'Abdelrahman',
+    urgency: 'critical',
+    impact: 'AED 4,200 protected',
+    reason: 'Female bridal customer has a Thursday Riyadh deadline and current assignee is offline.',
+    action: 'Hold one set, escalate delivery promise, and notify finance before payment confirmation.',
+  },
+  {
+    title: 'Reorder Moonstone Pendant before weekend',
+    owner: 'Ez',
+    urgency: 'high',
+    impact: 'AED 18,000 forecast',
+    reason: 'Only 3 units remain and ladies gift demand is rising from Google and WhatsApp.',
+    action: 'Approve supplier reorder and switch product to controlled preorder below 2 units.',
+  },
+  {
+    title: 'Resolve Ruby Bangle price mismatch',
+    owner: 'Mahmoud',
+    urgency: 'high',
+    impact: 'AED 14,600 margin risk',
+    reason: 'Shopify and WooCommerce differ by 13.6%, creating WhatsApp objections.',
+    action: 'Decide intended luxury price, update both stores, and pin the exception if KSA-specific.',
+  },
+  {
+    title: 'Attach Oud Royal as bridal bundle',
+    owner: 'Ahmed',
+    urgency: 'medium',
+    impact: '+AED 450 AOV',
+    reason: 'VIP women who view bridal sets also respond to perfume gift bundles.',
+    action: 'Add WhatsApp product card and Google landing-page cross-sell copy.',
+  },
+];
+
+export const INVENTORY_RESERVATIONS = [
+  { customer: 'Mariam Al Harbi', product: 'LE Celestial Bridal Set', qty: 1, owner: 'Abdelrahman', expires: 'Today 18:00', reason: 'Riyadh bridal delivery before Thursday', status: 'urgent' },
+  { customer: 'Latifa Al Qasimi', product: 'VIP Eid private drop', qty: 2, owner: 'Mahmoud', expires: 'Tomorrow 12:00', reason: 'Repeat VIP female buyer', status: 'held' },
+  { customer: 'Aisha Al Suwaidi', product: 'Moonstone Pendant for Ladies', qty: 2, owner: 'Arslan', expires: 'Today 20:00', reason: 'Gift order waiting delivery confirmation', status: 'review' },
+];
+
+export const INVENTORY_REORDER_QUEUE = [
+  { product: 'Moonstone Pendant for Ladies', current: 3, threshold: 8, reorder: 24, supplier: 'Omnia Atelier', leadTime: '5 days', forecast: '24 sold / 7d', status: 'approve' },
+  { product: 'Ruby Bangle for Ladies', current: 18, threshold: 10, reorder: 16, supplier: 'Omnia Atelier', leadTime: '7 days', forecast: '14 sold / 7d', status: 'monitor' },
+  { product: 'Oud Royal Perfume for Ladies', current: 42, threshold: 20, reorder: 30, supplier: 'Omnia Fragrance', leadTime: '4 days', forecast: '11 sold / 7d', status: 'bundle' },
+  { product: 'LE Celestial Bridal Set', current: 8, threshold: 5, reorder: 6, supplier: 'Omnia Atelier', leadTime: '12 days', forecast: '3 reserved / 48h', status: 'reserve' },
+];
+
+export const INVENTORY_CHANNELS = [
+  { name: 'Shopify .ae', status: 'online', products: 3, issue: 'Moonstone low stock needs preorder rule', sync: '13m ago' },
+  { name: 'WooCommerce .com', status: 'drift', products: 1, issue: 'Ruby price mismatch with Shopify', sync: '3h ago' },
+  { name: 'WhatsApp Catalog', status: 'online', products: 4, issue: 'Add bridal delivery note to product card', sync: '8m ago' },
+  { name: 'Google Merchant', status: 'warning', products: 3, issue: '12 missing meta fields and image compression needed', sync: '42m ago' },
+];
+
+export const INVENTORY_SUPPLIERS = [
+  { name: 'Omnia Atelier', category: 'Jewellery', health: 86, leadTime: '5-12 days', risk: 'Moonstone reorder approval pending' },
+  { name: 'Omnia Fragrance', category: 'Perfume', health: 92, leadTime: '4 days', risk: 'Stable, use for bridal bundle' },
+  { name: 'Luxury Packaging UAE', category: 'Packaging', health: 78, leadTime: '3 days', risk: 'VIP Eid packaging forecast needed' },
+  { name: 'KSA Courier Partner', category: 'Delivery', health: 73, leadTime: '2 days', risk: 'Bridal deadline requires manual confirmation' },
+];
+
+export const INVENTORY_SEO_TASKS = [
+  { product: 'LE Celestial Bridal Set', keyword: 'ladies bridal jewellery dubai', issue: 'Add delivery certainty and Arabic bridal FAQ', impact: '+9% qualified clicks' },
+  { product: 'Moonstone Pendant for Ladies', keyword: 'women eid gift jewellery', issue: 'Clarify limited stock and gift packaging', impact: '+14% WhatsApp handoff' },
+  { product: 'Ruby Bangle for Ladies', keyword: 'ruby bangle for ladies uae', issue: 'Resolve price mismatch before campaign traffic', impact: 'Lower objection rate' },
+  { product: 'Oud Royal Perfume for Ladies', keyword: 'luxury ladies perfume uae', issue: 'Add bridal bundle copy', impact: '+AED 450 AOV' },
+];
+
+export const AI_COMMAND_CENTER = {
+  name: 'Omnia AI',
+  status: 'online',
+  autonomy: 74,
+  confidence: 88,
+  coverage: 'Management, WhatsApp, Inventory, Finance, Customers, Google, Reports',
+  guardrail: 'Omnia can recommend, draft, route, and prepare actions. Owner approval is required for discounts, access, refunds, BNPL, and price changes.',
+};
+
+export const AI_ROOMS = [
+  { room: 'WhatsApp Desk', health: 94, signal: 'Mariam K. bridal thread needs reassignment', action: 'Move to Abdelrahman and finance pre-check' },
+  { room: 'Inventory', health: 81, signal: 'Moonstone low stock and Ruby price drift', action: 'Approve reorder and resolve parity' },
+  { room: 'Finance', health: 76, signal: 'Two pending payment checks', action: 'Prioritize Noura and Mariam because both affect delivery promises' },
+  { room: 'Google Dashboard', health: 84, signal: 'Ladies bridal keywords rising', action: 'Push product SEO copy and WhatsApp mining queue' },
+  { room: 'Customers', health: 90, signal: 'VIP female repeat buyers respond to private drops', action: 'Prepare Eid private drop segment' },
+  { room: 'Reports', health: 92, signal: 'Daily command brief ready', action: 'Send owner summary at 18:00' },
+];
+
+export const AI_MEMORY_STACK = [
+  { key: 'customer_rule', value: 'The business sells only to ladies. All customer examples and segments must be women.', priority: 10 },
+  { key: 'staffing_rule', value: 'Most operators are male. Route by skill, workload, language, and urgency.', priority: 9 },
+  { key: 'luxury_guardrail', value: 'Do not lead bridal or VIP flows with discounts. Use concierge, privacy, and delivery certainty first.', priority: 9 },
+  { key: 'owner_approval', value: 'Require owner approval for refunds, access changes, price changes, BNPL exceptions, and broadcasts.', priority: 8 },
+  { key: 'inventory_watch', value: 'Moonstone Pendant low stock and Ruby Bangle price drift are active risks.', priority: 8 },
+];
+
+export const AI_AUTOMATION_PIPELINE = [
+  { name: 'Read every room', status: 'running', cadence: 'Live', detail: 'Summarizes WhatsApp, inventory, finance, and Google signals.' },
+  { name: 'Detect decision risk', status: 'running', cadence: '5 min', detail: 'Finds stalled owner decisions, urgent bridal cases, and finance blockers.' },
+  { name: 'Draft safe action', status: 'running', cadence: 'On signal', detail: 'Creates replies, tasks, reorder suggestions, and report notes.' },
+  { name: 'Route to male operator', status: 'running', cadence: 'On task', detail: 'Assigns work by role, score, workload, language, and market.' },
+  { name: 'Wait for approval', status: 'guarded', cadence: 'Required', detail: 'Stops before sensitive operations and owner-only actions.' },
+  { name: 'Remember decisions', status: 'running', cadence: 'After approval', detail: 'Pins pricing, campaign, and policy decisions back into memory.' },
+];
+
 export function getMockTableData(table: string) {
   return MOCK_TABLES[table] ? [...MOCK_TABLES[table]] : [];
 }
