@@ -38,8 +38,6 @@ import { getSession } from '@/lib/session';
 import {
   ACCESS_REQUESTS,
   AI_MEMORY_STACK,
-  INVENTORY_REORDER_QUEUE,
-  OMNIA_DECISIONS,
   ORG_PROFILE,
   STAFF_ROSTER,
 } from '@/lib/operations-intelligence';
@@ -58,6 +56,22 @@ type Metric = {
   detail: string;
   icon: LucideIcon;
   tone?: Tone;
+};
+
+type RoomFeature = {
+  title: string;
+  owner: string;
+  status: string;
+  detail: string;
+  primary: string;
+  secondary: string;
+  icon: LucideIcon;
+};
+
+type ChecklistItem = {
+  label: string;
+  value: string;
+  status: string;
 };
 
 const toneClasses: Record<Tone, string> = {
@@ -94,7 +108,7 @@ const milestonePlan = [
     status: 'ready',
     owner: 'Ez',
     progress: 100,
-    detail: 'Core rooms, route stability, mock Supabase fallback, and dedicated dashboards are now live.',
+    detail: 'Core rooms, route stability, Supabase fallback data, and dedicated dashboards are now live.',
   },
   {
     title: 'Phase 2 - Commerce Intelligence',
@@ -115,8 +129,379 @@ const milestonePlan = [
     status: 'planned',
     owner: 'Ez',
     progress: 62,
-    detail: 'Move from safe mock fallbacks to production API credentials for WhatsApp, stores, Google, and finance systems.',
+    detail: 'Move from safe demo fallbacks to production API credentials for WhatsApp, stores, Google, and finance systems.',
   },
+];
+
+const roomFeatureDecks: Record<string, RoomFeature[]> = {
+  milestone: [
+    {
+      title: 'Room Coverage Matrix',
+      owner: 'Ez',
+      status: 'ready',
+      detail: 'Tracks every door in the rail, its owner, current health, and whether it has a dedicated operating surface.',
+      primary: 'Audit rooms',
+      secondary: 'Export plan',
+      icon: Map,
+    },
+    {
+      title: 'Launch Readiness Gates',
+      owner: 'Mahmoud',
+      status: 'guarded',
+      detail: 'Separates safe demo workflows from production credentials, billing controls, and owner-only approval areas.',
+      primary: 'Review gates',
+      secondary: 'Assign owner',
+      icon: ShieldCheck,
+    },
+    {
+      title: 'Decision Timeline',
+      owner: 'Omnia AI',
+      status: 'active',
+      detail: 'Keeps milestone decisions tied to rooms, deadlines, and follow-up tasks for the male operating team.',
+      primary: 'Open timeline',
+      secondary: 'Create task',
+      icon: Clock3,
+    },
+  ],
+  orders: [
+    {
+      title: 'Order Triage',
+      owner: 'Abdelrahman',
+      status: 'urgent',
+      detail: 'Ranks orders by bridal deadline, payment status, customer value, channel, and stock reservation risk.',
+      primary: 'Prioritize',
+      secondary: 'Route',
+      icon: PackageCheck,
+    },
+    {
+      title: 'Payment And Finance Handoff',
+      owner: 'Arslan',
+      status: 'pending',
+      detail: 'Links each order to finance verification, bank-transfer evidence, BNPL policy, and owner exceptions.',
+      primary: 'Verify',
+      secondary: 'Escalate',
+      icon: CreditCard,
+    },
+    {
+      title: 'Fulfillment Promise Control',
+      owner: 'Ez',
+      status: 'dispatch',
+      detail: 'Blocks customer promises until inventory, courier, packaging, and proof-of-delivery needs are aligned.',
+      primary: 'Prepare',
+      secondary: 'Open shipping',
+      icon: Truck,
+    },
+  ],
+  shipping: [
+    {
+      title: 'Courier SLA Board',
+      owner: 'Ez',
+      status: 'active',
+      detail: 'Compares UAE same-day and KSA courier capacity against promised delivery windows.',
+      primary: 'Check SLA',
+      secondary: 'Call courier',
+      icon: Route,
+    },
+    {
+      title: 'Proof Of Delivery Queue',
+      owner: 'Arslan',
+      status: 'pending',
+      detail: 'Requires signature, delivery photo, and WhatsApp confirmation for high-value ladies orders.',
+      primary: 'Request POD',
+      secondary: 'Notify customer',
+      icon: BadgeCheck,
+    },
+    {
+      title: 'Luxury Packaging Gate',
+      owner: 'Abdelrahman',
+      status: 'guarded',
+      detail: 'Checks gift wrap, Arabic card copy, privacy notes, and bridal handling before dispatch.',
+      primary: 'Inspect',
+      secondary: 'Hold',
+      icon: Gift,
+    },
+  ],
+  cashback: [
+    {
+      title: 'Wallet Ledger',
+      owner: 'Mahmoud',
+      status: 'active',
+      detail: 'Shows earned, reserved, redeemed, and expired credits for women customers without public discount framing.',
+      primary: 'Open ledger',
+      secondary: 'Export',
+      icon: WalletCards,
+    },
+    {
+      title: 'Redemption Approval',
+      owner: 'Mahmoud',
+      status: 'owner',
+      detail: 'Requires owner approval when credit touches VIP private drops, bridal pricing, or refund recovery.',
+      primary: 'Approve',
+      secondary: 'Reject',
+      icon: LockKeyhole,
+    },
+    {
+      title: 'Concierge Credit Rules',
+      owner: 'Omnia AI',
+      status: 'guarded',
+      detail: 'Positions credits as service value, gift wrap, or delivery support instead of generic discounting.',
+      primary: 'Apply rule',
+      secondary: 'Draft copy',
+      icon: ShieldCheck,
+    },
+  ],
+  'gemini-room': [
+    {
+      title: 'Search Prompt Studio',
+      owner: 'Ahmed',
+      status: 'running',
+      detail: 'Turns WhatsApp phrases from women buyers into Google keyword prompts and product-copy jobs.',
+      primary: 'Generate',
+      secondary: 'Review',
+      icon: Bot,
+    },
+    {
+      title: 'Merchant Feed Writer',
+      owner: 'Omnia AI',
+      status: 'queued',
+      detail: 'Drafts titles, descriptions, FAQ, and Arabic reassurance copy for product feeds.',
+      primary: 'Draft feed',
+      secondary: 'Send to Google',
+      icon: FileText,
+    },
+    {
+      title: 'Inventory Campaign Stopper',
+      owner: 'Ez',
+      status: 'guarded',
+      detail: 'Stops campaign pushes when low stock, price drift, or preorder wording requires owner confirmation.',
+      primary: 'Run check',
+      secondary: 'Open inventory',
+      icon: ShieldCheck,
+    },
+  ],
+  'meeting-room': [
+    {
+      title: 'Transcript Capture',
+      owner: 'Omnia AI',
+      status: 'ready',
+      detail: 'Captures meeting notes, extracts decisions, and links follow-ups to room owners.',
+      primary: 'Start capture',
+      secondary: 'Import notes',
+      icon: Mic,
+    },
+    {
+      title: 'Decision Register',
+      owner: 'Mahmoud',
+      status: 'guarded',
+      detail: 'Stores owner decisions for pricing, access, refunds, BNPL, broadcasts, and delivery promises.',
+      primary: 'Record decision',
+      secondary: 'Pin memory',
+      icon: LockKeyhole,
+    },
+    {
+      title: 'Follow-Up Router',
+      owner: 'Ez',
+      status: 'active',
+      detail: 'Routes follow-ups by room, urgency, skill, workload, and language.',
+      primary: 'Route tasks',
+      secondary: 'Send brief',
+      icon: CheckSquare,
+    },
+  ],
+  'drive-room': [
+    {
+      title: 'Room File Vault',
+      owner: 'Ez',
+      status: 'active',
+      detail: 'Links policies, courier sheets, pricing evidence, and creative briefs to their operating room.',
+      primary: 'Open vault',
+      secondary: 'Upload',
+      icon: HardDrive,
+    },
+    {
+      title: 'Visibility Rules',
+      owner: 'Mahmoud',
+      status: 'guarded',
+      detail: 'Controls owner-only, team, and read-only access for sensitive files.',
+      primary: 'Set access',
+      secondary: 'Audit',
+      icon: KeyRound,
+    },
+    {
+      title: 'Evidence Pack Builder',
+      owner: 'Omnia AI',
+      status: 'review',
+      detail: 'Collects files and room facts behind a decision so approvals have supporting evidence.',
+      primary: 'Build pack',
+      secondary: 'Share',
+      icon: FileText,
+    },
+  ],
+  team: [
+    {
+      title: 'Routing Console',
+      owner: 'Omnia AI',
+      status: 'active',
+      detail: 'Assigns male operators by skill, language, workload, performance score, and market fit.',
+      primary: 'Route work',
+      secondary: 'Balance load',
+      icon: Route,
+    },
+    {
+      title: 'Skill Matrix',
+      owner: 'Mahmoud',
+      status: 'ready',
+      detail: 'Maps WhatsApp sales, payment verification, SEO, vendor coordination, Arabic, and KSA market skills.',
+      primary: 'Open skills',
+      secondary: 'Train',
+      icon: Users,
+    },
+    {
+      title: 'Performance Review',
+      owner: 'Ez',
+      status: 'active',
+      detail: 'Tracks response quality, task completion, help given, workload, and escalation behavior.',
+      primary: 'Review',
+      secondary: 'Coach',
+      icon: BadgeCheck,
+    },
+  ],
+  backyard: [
+    {
+      title: 'Recognition Board',
+      owner: 'Mahmoud',
+      status: 'planned',
+      detail: 'Highlights weekly wins for recovery speed, Arabic concierge quality, and clean finance handoffs.',
+      primary: 'Nominate',
+      secondary: 'Publish',
+      icon: Gift,
+    },
+    {
+      title: 'Training Calendar',
+      owner: 'Abdelrahman',
+      status: 'active',
+      detail: 'Schedules WhatsApp shadowing, customer privacy standards, and bridal handling practice.',
+      primary: 'Schedule',
+      secondary: 'Assign',
+      icon: CalendarDays,
+    },
+    {
+      title: 'Workload Wellbeing',
+      owner: 'Omnia AI',
+      status: 'active',
+      detail: 'Watches overload, stalled work, and repeated escalations so recognition and support move together.',
+      primary: 'Check load',
+      secondary: 'Reroute',
+      icon: ShieldCheck,
+    },
+  ],
+  'co-tasking': [
+    {
+      title: 'Live Kanban',
+      owner: 'Omnia AI',
+      status: 'active',
+      detail: 'Groups work by pending, accepted, in progress, stalled, and completed lanes.',
+      primary: 'Open board',
+      secondary: 'Create task',
+      icon: CheckSquare,
+    },
+    {
+      title: 'Reroute Assistant',
+      owner: 'Ez',
+      status: 'urgent',
+      detail: 'Moves stalled work when the assignee is offline, overloaded, or missing a required skill.',
+      primary: 'Reroute',
+      secondary: 'Escalate',
+      icon: Route,
+    },
+    {
+      title: 'Collaboration Score',
+      owner: 'Mahmoud',
+      status: 'review',
+      detail: 'Uses help given, help received, completion speed, and quality signals to improve handoffs.',
+      primary: 'Review',
+      secondary: 'Coach',
+      icon: BadgeCheck,
+    },
+  ],
+  'access-requests': [
+    {
+      title: 'Permission Matrix',
+      owner: 'Mahmoud',
+      status: 'guarded',
+      detail: 'Shows requested role, room, risk, evidence, and whether the access is read-only or action-capable.',
+      primary: 'Inspect',
+      secondary: 'Compare',
+      icon: KeyRound,
+    },
+    {
+      title: 'Approval Workflow',
+      owner: 'Mahmoud',
+      status: 'owner',
+      detail: 'Approves, rejects, or time-boxes access. AI explains risk but never grants access automatically.',
+      primary: 'Approve',
+      secondary: 'Reject',
+      icon: LockKeyhole,
+    },
+    {
+      title: 'Audit Trail',
+      owner: 'Ez',
+      status: 'active',
+      detail: 'Keeps history of who requested access, who approved it, and which room/file it affected.',
+      primary: 'Open audit',
+      secondary: 'Export',
+      icon: FileText,
+    },
+  ],
+  settings: [
+    {
+      title: 'Organization Profile',
+      owner: 'Mahmoud',
+      status: 'ready',
+      detail: 'Keeps market, currency, ladies-only rule, staffing rule, and approval policies in one place.',
+      primary: 'Edit profile',
+      secondary: 'Save',
+      icon: Settings,
+    },
+    {
+      title: 'Approval Policies',
+      owner: 'Mahmoud',
+      status: 'guarded',
+      detail: 'Defines owner-only gates for discounts, access changes, refunds, BNPL exceptions, price changes, and broadcasts.',
+      primary: 'Edit policy',
+      secondary: 'Test',
+      icon: ShieldCheck,
+    },
+    {
+      title: 'Integration Toggles',
+      owner: 'Ez',
+      status: 'review',
+      detail: 'Controls WhatsApp, Shopify, WooCommerce, Google, finance verification, and report delivery toggles.',
+      primary: 'Open toggles',
+      secondary: 'Check health',
+      icon: Globe2,
+    },
+  ],
+};
+
+const milestoneChecks: ChecklistItem[] = [
+  { label: 'Rail doors implemented', value: '24/24', status: 'ready' },
+  { label: 'Ladies-only demo data', value: 'Enforced', status: 'ready' },
+  { label: 'Owner approval gates', value: 'Active', status: 'guarded' },
+  { label: 'Production credentials', value: 'Next phase', status: 'planned' },
+];
+
+const shippingChecklist: ChecklistItem[] = [
+  { label: 'Gift packaging', value: 'Required on VIP and bridal', status: 'active' },
+  { label: 'Courier SLA', value: 'Manual check for KSA', status: 'urgent' },
+  { label: 'POD capture', value: 'Photo plus signature', status: 'pending' },
+  { label: 'WhatsApp confirmation', value: 'Send after courier scan', status: 'queued' },
+];
+
+const accessAudit = [
+  { who: 'Arslan', event: 'Requested WhatsApp refund approvals', time: 'Today 12:40', status: 'review' },
+  { who: 'Ahmed', event: 'Requested keyword publishing access', time: 'Today 11:10', status: 'pending' },
+  { who: 'Mohamed', event: 'Requested read-only customer profile access', time: 'Yesterday 16:20', status: 'pending' },
 ];
 
 const orders = [
@@ -398,7 +783,7 @@ function RoomContent({ room }: { room: Room }) {
     case 'settings':
       return <SettingsRoom />;
     default:
-      return <OperationalFallback room={room} />;
+      return null;
   }
 }
 
@@ -462,6 +847,80 @@ function ActionCard({
   );
 }
 
+function RoomFeatureDeck({ slug, title = 'Room Features' }: { slug: string; title?: string }) {
+  const features = roomFeatureDecks[slug] || [];
+  if (features.length === 0) return null;
+
+  return (
+    <Card className="border-border bg-card/70">
+      <CardHeader className="border-b border-border">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Sparkles className="h-4 w-4 text-primary" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 p-4 lg:grid-cols-3">
+        {features.map((feature) => {
+          const Icon = feature.icon;
+          return (
+            <div key={feature.title} className="rounded-md border border-border bg-background/50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-medium leading-snug">{feature.title}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">Owner: {feature.owner}</p>
+                  </div>
+                </div>
+                <StatusBadge status={feature.status} />
+              </div>
+              <p className="mt-4 text-sm text-muted-foreground">{feature.detail}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button size="sm" className="gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {feature.primary}
+                </Button>
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Route className="h-4 w-4" />
+                  {feature.secondary}
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChecklistPanel({ title, items, icon: Icon }: { title: string; items: ChecklistItem[]; icon: LucideIcon }) {
+  return (
+    <Card className="border-border bg-card/70">
+      <CardHeader className="border-b border-border">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Icon className="h-4 w-4 text-primary" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
+        {items.map((item) => (
+          <div key={item.label} className="rounded-md border border-border bg-background/50 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">{item.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{item.value}</p>
+              </div>
+              <StatusBadge status={item.status} />
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 function MilestoneRoom() {
   return (
     <div className="space-y-6">
@@ -473,6 +932,8 @@ function MilestoneRoom() {
           { label: 'Approval gates', value: '5 guarded', detail: 'Refunds, access, BNPL, price, and broadcasts', icon: LockKeyhole, tone: 'warn' },
         ]}
       />
+      <ChecklistPanel title="Implementation Gates" items={milestoneChecks} icon={BadgeCheck} />
+      <RoomFeatureDeck slug="milestone" title="Milestone Control Features" />
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_.9fr]">
         <Card className="border-border bg-card/70">
@@ -509,7 +970,7 @@ function MilestoneRoom() {
                   Omnia AI watches the rooms, remembers policies, routes work to the right male operator, and stops at owner gates for sensitive decisions.
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Mock data is deliberately aligned to women customers because House of Omnia sells only to ladies.
+                  Demo data is deliberately aligned to women customers because House of Omnia sells only to ladies.
                 </p>
               </div>
             </div>
@@ -534,6 +995,7 @@ function OrdersRoom() {
           { label: 'Owner approvals', value: '1', detail: 'Private drop allocation and pricing guardrail', icon: LockKeyhole, tone: 'warn' },
         ]}
       />
+      <RoomFeatureDeck slug="orders" title="Order Operating Features" />
 
       <Card className="border-border bg-card/70">
         <CardHeader className="border-b border-border">
@@ -592,6 +1054,9 @@ function ShippingRoom() {
           { label: 'POD needed', value: '3', detail: 'Proof of delivery required on luxury orders', icon: BadgeCheck, tone: 'good' },
         ]}
       />
+      <RoomFeatureDeck slug="shipping" title="Shipping Operating Features" />
+      <ChecklistPanel title="Dispatch Checklist" items={shippingChecklist} icon={Truck} />
+
       <Card className="border-border bg-card/70">
         <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -627,6 +1092,8 @@ function CashbackRoom() {
           { label: 'Ladies customers', value: '3', detail: 'All examples are women customers', icon: Users, tone: 'info' },
         ]}
       />
+      <RoomFeatureDeck slug="cashback" title="Cashback Operating Features" />
+
       <Card className="border-border bg-card/70">
         <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -662,6 +1129,8 @@ function GeminiRoom() {
           { label: 'Keyword source', value: 'WhatsApp', detail: 'Customer phrases mined from women buyers', icon: Globe2, tone: 'gold' },
         ]}
       />
+      <RoomFeatureDeck slug="gemini-room" title="Gemini Operating Features" />
+
       <section className="grid gap-6 xl:grid-cols-[1fr_.8fr]">
         <Card className="border-border bg-card/70">
           <CardHeader className="border-b border-border">
@@ -705,6 +1174,8 @@ function MeetingRoom() {
           { label: 'Owner gates', value: '4', detail: 'Sensitive decisions are recorded and guarded', icon: LockKeyhole, tone: 'warn' },
         ]}
       />
+      <RoomFeatureDeck slug="meeting-room" title="Meeting Operating Features" />
+
       <Card className="border-border bg-card/70">
         <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -739,6 +1210,8 @@ function DriveRoom() {
           { label: 'Policy memory', value: '5', detail: 'Pinned AI rules backed by file context', icon: ShieldCheck, tone: 'gold' },
         ]}
       />
+      <RoomFeatureDeck slug="drive-room" title="Drive Operating Features" />
+
       <section className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
         <Card className="border-border bg-card/70">
           <CardHeader className="border-b border-border">
@@ -800,6 +1273,8 @@ function TeamRoom() {
           { label: 'Open workload', value: String(STAFF_ROSTER.reduce((sum, member) => sum + member.workload, 0)), detail: 'Active non-completed tasks', icon: CheckSquare, tone: 'warn' },
         ]}
       />
+      <RoomFeatureDeck slug="team" title="Team Operating Features" />
+
       <Card className="border-border bg-card/70">
         <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -851,6 +1326,8 @@ function BackyardRoom() {
           { label: 'Wellbeing guardrail', value: 'Visible', detail: 'Workload and recognition tracked together', icon: ShieldCheck, tone: 'warn' },
         ]}
       />
+      <RoomFeatureDeck slug="backyard" title="Backyard Operating Features" />
+
       <Card className="border-border bg-card/70">
         <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -883,6 +1360,8 @@ function CoTaskingRoom() {
           { label: 'AI routing', value: 'Live', detail: 'Assignee chosen by skill, workload, market, and urgency', icon: Bot, tone: 'gold' },
         ]}
       />
+      <RoomFeatureDeck slug="co-tasking" title="Co-Tasking Operating Features" />
+
       <Card className="border-border bg-card/70">
         <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -939,6 +1418,8 @@ function AccessRequestsRoom() {
           { label: 'Guardrail', value: 'Manual', detail: 'No access is auto-approved by AI', icon: BadgeCheck, tone: 'gold' },
         ]}
       />
+      <RoomFeatureDeck slug="access-requests" title="Access Operating Features" />
+
       <Card className="border-border bg-card/70">
         <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -956,6 +1437,28 @@ function AccessRequestsRoom() {
               detail={request.reason}
               footer={`${request.risk.toUpperCase()} risk. AI can explain; owner must approve.`}
             />
+          ))}
+        </CardContent>
+      </Card>
+      <Card className="border-border bg-card/70">
+        <CardHeader className="border-b border-border">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4 text-primary" />
+            Access Audit Trail
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 p-4">
+          {accessAudit.map((item) => (
+            <div key={`${item.who}-${item.time}`} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background/50 p-3 text-sm">
+              <div>
+                <p className="font-medium">{item.who}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{item.event}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">{item.time}</span>
+                <StatusBadge status={item.status} />
+              </div>
+            </div>
           ))}
         </CardContent>
       </Card>
@@ -979,9 +1482,11 @@ function SettingsRoom() {
           { label: 'Profile', value: session.user.name, detail: `${session.user.role} access`, icon: Settings, tone: 'gold' },
           { label: 'Organization', value: session.org.name, detail: `@${session.org.handle}`, icon: ShieldCheck, tone: 'info' },
           { label: 'Currency', value: ORG_PROFILE.currency, detail: 'Used across dashboards', icon: CreditCard, tone: 'good' },
-          { label: 'Pinned rules', value: String(rules.length), detail: 'System behavior and mock-data rules', icon: LockKeyhole, tone: 'warn' },
+          { label: 'Pinned rules', value: String(rules.length), detail: 'System behavior and demo-data rules', icon: LockKeyhole, tone: 'warn' },
         ]}
       />
+      <RoomFeatureDeck slug="settings" title="Settings Operating Features" />
+
       <section className="grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
         <Card className="border-border bg-card/70">
           <CardContent className="p-5">
@@ -1016,31 +1521,6 @@ function SettingsRoom() {
           </CardContent>
         </Card>
       </section>
-    </div>
-  );
-}
-
-function OperationalFallback({ room }: { room: Room }) {
-  const relatedDecision = OMNIA_DECISIONS[0];
-  const reorder = INVENTORY_REORDER_QUEUE[0];
-
-  return (
-    <div className="space-y-6">
-      <SummaryGrid
-        metrics={[
-          { label: 'Room status', value: 'Active', detail: `${room.name} is connected to the command layer`, icon: room.icon, tone: 'good' },
-          { label: 'AI decision', value: '1 linked', detail: relatedDecision.title, icon: Bot, tone: 'gold' },
-          { label: 'Inventory signal', value: reorder.product, detail: reorder.forecast, icon: PackageCheck, tone: 'warn' },
-          { label: 'Owner gate', value: 'Enabled', detail: 'Sensitive actions require approval', icon: LockKeyhole, tone: 'info' },
-        ]}
-      />
-      <Card className="border-border bg-card/70">
-        <CardContent className="p-6">
-          <h2 className="font-medium">{room.name} Operating Surface</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{room.description}</p>
-          <p className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">{relatedDecision.nextStep}</p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
